@@ -1,0 +1,31 @@
+// Can comment lines out.
+0 :: 1
+a -> 1
+
+1 :: 2
+-> 2
+-> 8
+
+2 :: 2
+-> 3
+-> 5
+
+3 :: 1
+b -> 4
+
+4 :: 1
+-> 7
+
+5 :: 1
+c -> 6
+
+6 :: 1
+-> 7
+
+7 :: 2
+-> 2
+-> 8
+
+8 => 0
+
+// Should include a single line at top telling how many states in total file.
