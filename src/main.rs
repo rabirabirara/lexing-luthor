@@ -3,14 +3,16 @@
 // mod state_set;
 mod fa;
 mod symbol;
-mod parse_fa;
+mod fa_reader;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let fa = parse_fa::build_fa("D:\\opus\\rupo\\finite-automata\\test.fa".to_string())?;
+    let fa = fa_reader::from_file("D:\\opus\\rupo\\finite-automata\\test.fa".to_string())?;
+
+    println!("{}", fa);
 
     let dfa = fa.dfa_from();
 
-    println!("{:?}", dfa);
+    println!("{}", dfa);
 
     // println!("{:?}", fa);
     // println!("{}", fa.dfa_accepts("ab".to_string()));

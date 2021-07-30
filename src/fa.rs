@@ -1,9 +1,10 @@
 use crate::symbol::{Symbol, ASCII};
+use crate::fa_reader;
 
 // * Look into using GraphViz to visualize the finite automata, with the 'dot' crate.
 
 use std::collections::HashMap;
-// use std::collections::HashSet;
+use std::iter::FromIterator;
 
 
 type State = usize;
@@ -219,10 +220,40 @@ impl FA {
     // }
 }
 
-// TODO: Impl display for FA such that it follows the conventions of the input file to specify an FA in parse_fa.rs.
-// impl Display for FA {
+impl std::fmt::Display for FA {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        use std::fmt::Write;
+        let mut v = Vec::from_iter(self.graph.iter());
+        v.sort_by(|a, b| (a.0).partial_cmp(b.0).unwrap());
 
-// }
+        let mut output = String::new();
+        let mut state_count = 0;
+        let mut transition_count = 0;
+
+        for (state, transitions) in v {
+            state_count += 1;
+            writeln!(output, "{} {} {}", state, {
+                if self.accepting.contains(state) { fa_reader::ACCEPT_SYMBOL } else { fa_reader::STATE_SYMBOL }
+            }, transitions.len())?;
+
+            for t in transitions {
+                transition_count += 1;
+                writeln!(output, "{} -> {}", {
+                    match t.sym {
+                        Symbol::Char(c) => c,
+                        Symbol::Empty => ' ',
+                    }
+                }, t.end)?;
+            }
+
+            writeln!(output, "")?;
+        }
+
+        writeln!(output, "// {} states, {} transitions", state_count, transition_count)?;
+        
+        write!(f, "{}", output)
+    }
+}
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]

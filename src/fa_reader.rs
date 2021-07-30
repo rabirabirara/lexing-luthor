@@ -8,11 +8,11 @@ use crate::symbol::Symbol;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
-const STATE: &'static str = "::";
-const ACCEPT: &'static str = "=>";
+pub const STATE_SYMBOL: &'static str = "::";
+pub const ACCEPT_SYMBOL: &'static str = "=>";
 
 
-pub fn build_fa(file_path: String) -> Result<FA, Box<dyn std::error::Error>> {
+pub fn from_file(file_path: String) -> Result<FA, Box<dyn std::error::Error>> {
     let file = File::open(file_path)?;
     let file = BufReader::new(file);
     let mut lines = file.lines().filter_map(|x| x.ok());
@@ -21,17 +21,18 @@ pub fn build_fa(file_path: String) -> Result<FA, Box<dyn std::error::Error>> {
     let mut fa = FA::new();
 
     while let Some(line) = lines.next() {
-        if line.starts_with("//") || line.trim().is_empty() {
+        let line = line.trim();
+        if line.starts_with("//") || line.is_empty() {
             continue;
         }
         line_count += 1;
         let parts = line.split_whitespace().collect::<Vec<&str>>();
-        if parts.len() == 3 && (parts[1] == STATE || parts[1] == ACCEPT) {
+        if parts.len() == 3 && (parts[1] == STATE_SYMBOL || parts[1] == ACCEPT_SYMBOL) {
             let state = parts[0].parse::<usize>()?;
             let transitions = parts[2].parse::<usize>()?;
 
             fa.add_state(state);
-            if parts[1] == ACCEPT {
+            if parts[1] == ACCEPT_SYMBOL {
                 fa.add_acceptor(state);
             }
 
@@ -77,3 +78,5 @@ pub fn build_fa(file_path: String) -> Result<FA, Box<dyn std::error::Error>> {
     }
     Ok(fa)
 }
+
+// * The impl Display for FA is in fa.rs.
