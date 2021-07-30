@@ -3,7 +3,7 @@ use crate::symbol::{Symbol, ASCII};
 // * Look into using GraphViz to visualize the finite automata, with the 'dot' crate.
 
 use std::collections::HashMap;
-use std::collections::HashSet;
+// use std::collections::HashSet;
 
 
 type State = usize;
@@ -148,41 +148,61 @@ impl FA {
         todo.push(q0);
 
         // TODO: So much cloning... can I just use RC at this point?  I should be able to put RC in at least todo and maybe dfa_states if I rely on dfa_table instead, and vice versa.
-
+        // TODO: This works, it just isn't correct yet.
+        let mut iter = 0;
         while let Some(state_set) = todo.pop() {
+            println!("iteration {} ++++++++++", iter);
+            iter += 1;
             for c in ASCII {
                 let sym = Symbol::Char(c);
                 if let Some(m) = self.delta_move(&state_set, sym) {
+                    println!("{:?} - {:?}", state_set, sym);
                     let u = self.epsilon_closure_set(m);
 
                     // either state has been visited or not.
                     // if visited, then no new entry to states or todo.  no increment of id. instead, update dfa_table with transition under appropriate index.
-                    if let Some(st) = dfa_states.get(&u) {
+                    if let Some(&st) = dfa_states.get(&u) {
                         if let Some(v) = dfa_table.get_mut(&st) {
-                            v.push(SetTransition::from(sym, state_set.clone(), u));
-                        } else {    // if, for some reason, the id isn't already in the hashmap even though it's in the state, something is wrong; crash.
-                            // dfa_table.insert(id, vec![SetTransition::from(sym, state_set.clone(), u)]);
-                            unreachable!()
+                            // if !v.iter().any(|x| x.sym == sym) {
+                                v.push(SetTransition::from(sym, state_set.clone(), u.clone()));
+                                // println!("{:?}", SetTransition::from(sym, state_set.clone(), u));
+                            // }
+                        } else {
+                            println!("{:?} - {:?}, found but not in table.", u, sym);
+                            // if the id isn't already in the hashmap but is in dfa_states, add it under the proper found id.
+                            dfa_table.insert(st, vec![SetTransition::from(sym, state_set.clone(), u)]);
                         }
-                    } else {    // if not visited.  then must add to states and todo, and dfa_table must gain appropriate entry.  increment id, because a new state just used an id..
-                        dfa_states.insert(u.clone(), id);
-                        todo.push(u.clone());
-                        dfa_table.insert(id, vec![SetTransition::from(sym, state_set.clone(), u)]);
+                    } else {
+                        println!("{:?} - {:?}, not found?.", state_set, sym); 
+                        // ! The id thing is wrong. You need to be able to insert into the dfa_table using a former id.
+                        // if not visited.  then must add to states and todo, and dfa_table must gain appropriate entry.  increment id, because a new state just used an id..
+                        // dfa_table is given the unincremented id, because it's the id of state_set, the currently checked set of states.
+                        // e.g. if this is the first iteration, then this would be the transition from the starting state.
+                        if let Some(&st) = dfa_states.get(&state_set) {
+                            dfa_table.insert(st, vec![SetTransition::from(sym, state_set.clone(), u.clone())]);
+                            println!("first");
+                        } else {
+                            dfa_table.insert(id, vec![SetTransition::from(sym, state_set.clone(), u.clone())]);
+                            println!("second");
+                        }
                         id += 1;
+                        dfa_states.insert(u.clone(), id);
+                        todo.push(u);
                     }
                 }
                 // else, just continue to the next symbol
             }
         }
-
+        println!("FINISHED +++++++++++");
         (dfa_states, dfa_table)
     }
     pub fn test(&self) {
         let (states, table) = self.subset_construction();
         println!("{:?}", states);
         for (id, tab) in table {
+            // println!("{:?}", tab);
             for t in tab {
-                println!("{}: {:?} -> {:?}", id, t.sym, states.get(&t.end).unwrap());
+                println!("{}: {:?} -- {:?} -> {:?}", id, t.begin, t.sym, t.end);
             }
         }
         // println!("{:?}", table);
@@ -190,7 +210,7 @@ impl FA {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Transition {
     sym: Symbol,
     begin: State,
@@ -218,7 +238,7 @@ impl Transition {
 
 
 // TODO: The `begin` field is not needed.  Look into whether removing it is possible, i.e. if anything uses the begin field.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 struct SetTransition<State> {
     sym: Symbol,
     begin: StateSet<State>,
