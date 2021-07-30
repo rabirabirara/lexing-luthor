@@ -16,6 +16,7 @@ The vertices of this graph are called "states", and the edges are called "transi
 Finite automata are built in accordance to a specification of a regular language.  Regular expressions are the specification - the grammar rules, so to speak -
 while the language itself consists of all strings that fit those rules.  
 The purpose of the automaton, of course, is to "accept" strings that are correct (part of the language), and to reject strings that are incorrect (not part of the language).
+
 You can work the automaton by starting from the start and reading the input string one character at a time; if you can traverse down a transition with the given character you are at,
 then move on to that transition's end state; if there are no transitions and still more input, reject the string.  If you have exhausted all the input characters, and are at an
 accepting state, then accept the string.
