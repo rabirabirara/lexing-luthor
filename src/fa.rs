@@ -135,77 +135,71 @@ impl FA {
         }
     }
     // Rather than alter in place, this generates a new finite automata altogether.
-    fn subset_construction(&self) -> (HashMap<StateSet<State>, State>, HashMap<State, Vec<SetTransition<State>>>) {
-        let mut dfa_states: HashMap<StateSet<State>, State> = HashMap::new();
-        let mut dfa_table: HashMap<State, Vec<SetTransition<State>>> = HashMap::new();
-
+    fn subset_construction(&self) -> HashMap<StateSet<State>, Vec<SetTransition<State>>> {
+        let mut dfa: HashMap<StateSet<State>, Vec<SetTransition<State>>> = HashMap::new();
         let mut todo: Vec<StateSet<State>> = Vec::new();
-        let mut id = 0usize;
 
         // First DFA state: ε-closure of first NFA state.
         let q0 = self.epsilon_closure(self.starting);
-        dfa_states.insert(q0.clone(), id);
+        dfa.insert(q0.clone(), Vec::new());
         todo.push(q0);
 
-        // TODO: So much cloning... can I just use RC at this point?  I should be able to put RC in at least todo and maybe dfa_states if I rely on dfa_table instead, and vice versa.
-        // TODO: This works, it just isn't correct yet.
-        let mut iter = 0;
         while let Some(state_set) = todo.pop() {
-            println!("iteration {} ++++++++++", iter);
-            iter += 1;
             for c in ASCII {
                 let sym = Symbol::Char(c);
                 if let Some(m) = self.delta_move(&state_set, sym) {
-                    println!("{:?} - {:?}", state_set, sym);
                     let u = self.epsilon_closure_set(m);
-
-                    // either state has been visited or not.
-                    // if visited, then no new entry to states or todo.  no increment of id. instead, update dfa_table with transition under appropriate index.
-                    if let Some(&st) = dfa_states.get(&u) {
-                        if let Some(v) = dfa_table.get_mut(&st) {
-                            // if !v.iter().any(|x| x.sym == sym) {
-                                v.push(SetTransition::from(sym, state_set.clone(), u.clone()));
-                                // println!("{:?}", SetTransition::from(sym, state_set.clone(), u));
-                            // }
-                        } else {
-                            println!("{:?} - {:?}, found but not in table.", u, sym);
-                            // if the id isn't already in the hashmap but is in dfa_states, add it under the proper found id.
-                            dfa_table.insert(st, vec![SetTransition::from(sym, state_set.clone(), u)]);
-                        }
+                    if let Some(v) = dfa.get_mut(&u) {
+                        v.push(SetTransition::from(sym, state_set.clone(), u.clone()));
                     } else {
-                        println!("{:?} - {:?}, not found?.", state_set, sym); 
-                        // ! The id thing is wrong. You need to be able to insert into the dfa_table using a former id.
-                        // if not visited.  then must add to states and todo, and dfa_table must gain appropriate entry.  increment id, because a new state just used an id..
-                        // dfa_table is given the unincremented id, because it's the id of state_set, the currently checked set of states.
-                        // e.g. if this is the first iteration, then this would be the transition from the starting state.
-                        if let Some(&st) = dfa_states.get(&state_set) {
-                            dfa_table.insert(st, vec![SetTransition::from(sym, state_set.clone(), u.clone())]);
-                            println!("first");
-                        } else {
-                            dfa_table.insert(id, vec![SetTransition::from(sym, state_set.clone(), u.clone())]);
-                            println!("second");
+                        // This is the missing link; check if something is in the map and then add to its vec.  Remember, you always want to update the transition table, whether or not the new states were already found.
+                        if let Some(v) = dfa.get_mut(&state_set) {
+                            v.push(SetTransition::from(sym, state_set.clone(), u.clone()));
                         }
-                        id += 1;
-                        dfa_states.insert(u.clone(), id);
+                        dfa.insert(u.clone(), Vec::new());
                         todo.push(u);
                     }
+
                 }
                 // else, just continue to the next symbol
             }
         }
-        println!("FINISHED +++++++++++");
-        (dfa_states, dfa_table)
+        dfa
+    }
+    pub fn convert_to_dfa(&self) -> Self {
+        let dfa = self.subset_construction();
+
+        let mut map = HashMap::new();
+        let mut acceptors = Vec::new();
+        let mut i = 1usize;
+        
+        for state in dfa.keys() {
+            // If any of the NFA states in this DFA state are accepting, the resulting DFA state is accepting.
+            if self.accepting.iter().any(|st| state.contains(st)) {
+                acceptors.push(i);
+            }
+            map.insert(state, i);
+            i += 1;
+        }
+
+        // TODO: Convert SetTransitions to Transitions uusing the map.
+
+        // Self {
+        //     states: Vec::new(),
+        //     starting: 0,
+        //     accepting: acceptors,
+        //     delta:  
+        // }
+
+        Self::new()
     }
     pub fn test(&self) {
-        let (states, table) = self.subset_construction();
-        println!("{:?}", states);
-        for (id, tab) in table {
-            // println!("{:?}", tab);
-            for t in tab {
-                println!("{}: {:?} -- {:?} -> {:?}", id, t.begin, t.sym, t.end);
+        let dfa = self.subset_construction();
+        for (stateset, transits) in dfa {
+            for t in transits {
+                println!("{:?}: {:?} -- {:?} -> {:?}", stateset, t.begin, t.sym, t.end);
             }
         }
-        // println!("{:?}", table);
     }
 }
 
