@@ -1,5 +1,6 @@
 #[allow(dead_code)]
 
+// mod state_set;
 mod fa;
 mod symbol;
 mod parse_fa;
@@ -13,6 +14,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for id in 0..fa.num_states() {
         println!("{:?} -- {:?}", id, fa.epsilon_closure(id));
     }
+
+    fa.test();
 
     Ok(())
 
