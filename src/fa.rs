@@ -34,6 +34,9 @@ impl FA {
     pub fn num_states(&self) -> usize {
         self.states.len()
     }
+    pub fn set_start(&mut self, s: State) {
+        self.starting = s;
+    }
     pub fn add_state(&mut self, s: State) {
         self.states.push(s);
         self.graph.insert(s, Vec::new());
@@ -135,14 +138,14 @@ impl FA {
         }
     }
     // Rather than alter in place, this generates a new finite automata altogether.
-    fn subset_construction(&self) -> HashMap<StateSet<State>, Vec<SetTransition<State>>> {
+    fn subset_construction(&self) -> (HashMap<StateSet<State>, Vec<SetTransition<State>>>, StateSet<State>) {
         let mut dfa: HashMap<StateSet<State>, Vec<SetTransition<State>>> = HashMap::new();
         let mut todo: Vec<StateSet<State>> = Vec::new();
 
         // First DFA state: ε-closure of first NFA state.
         let q0 = self.epsilon_closure(self.starting);
         dfa.insert(q0.clone(), Vec::new());
-        todo.push(q0);
+        todo.push(q0.clone());
 
         while let Some(state_set) = todo.pop() {
             for c in ASCII {
@@ -164,10 +167,12 @@ impl FA {
                 // else, just continue to the next symbol
             }
         }
-        dfa
+        (dfa, q0)
     }
-    pub fn convert_to_dfa(&self) -> Self {
-        let dfa = self.subset_construction();
+    pub fn dfa_from(&self) -> Self {
+        let (dfa, start) = self.subset_construction();
+
+        let mut fa = FA::new();
 
         let mut map = HashMap::new();
         let mut acceptors = Vec::new();
@@ -177,31 +182,47 @@ impl FA {
             // If any of the NFA states in this DFA state are accepting, the resulting DFA state is accepting.
             if self.accepting.iter().any(|st| state.contains(st)) {
                 acceptors.push(i);
+                fa.add_acceptor(i);
             }
-            map.insert(state, i);
-            i += 1;
-        }
-
-        // TODO: Convert SetTransitions to Transitions uusing the map.
-
-        // Self {
-        //     states: Vec::new(),
-        //     starting: 0,
-        //     accepting: acceptors,
-        //     delta:  
-        // }
-
-        Self::new()
-    }
-    pub fn test(&self) {
-        let dfa = self.subset_construction();
-        for (stateset, transits) in dfa {
-            for t in transits {
-                println!("{:?}: {:?} -- {:?} -> {:?}", stateset, t.begin, t.sym, t.end);
+            // If this is the epsilon-closure of the starting NFA state, then this DFA state is accepting.
+            if *state == start {
+                map.insert(state, 0);
+                fa.add_state(0);
+            } else {
+                map.insert(state, i);
+                fa.add_state(i);
+                i += 1;    
             }
         }
+
+        for ts in dfa.values() {
+            for t in ts {
+                let begin = map.get(&t.begin).unwrap();
+                let end = map.get(&t.end).unwrap();
+                fa.add_transition(
+                    Transition::from(t.sym, *begin, *end)
+                );
+            }
+        }
+
+        fa.set_start(0);
+
+        fa
     }
+    // pub fn test(&self) {
+    //     let dfa = self.subset_construction();
+    //     for (stateset, transits) in dfa {
+    //         for t in transits {
+    //             println!("{:?}: {:?} -- {:?} -> {:?}", stateset, t.begin, t.sym, t.end);
+    //         }
+    //     }
+    // }
 }
+
+// TODO: Impl display for FA such that it follows the conventions of the input file to specify an FA in parse_fa.rs.
+// impl Display for FA {
+
+// }
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
@@ -231,7 +252,6 @@ impl Transition {
 }
 
 
-// TODO: The `begin` field is not needed.  Look into whether removing it is possible, i.e. if anything uses the begin field.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 struct SetTransition<State> {
     sym: Symbol,

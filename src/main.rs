@@ -8,6 +8,10 @@ mod parse_fa;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fa = parse_fa::build_fa("D:\\opus\\rupo\\finite-automata\\test.fa".to_string())?;
 
+    let dfa = fa.dfa_from();
+
+    println!("{:?}", dfa);
+
     // println!("{:?}", fa);
     // println!("{}", fa.dfa_accepts("ab".to_string()));
 
@@ -15,7 +19,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     println!("{:?} -- {:?}", id, fa.epsilon_closure(id));
     // }
 
-    fa.test();
+    // fa.test();
 
     Ok(())
 
