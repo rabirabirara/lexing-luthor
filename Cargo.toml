@@ -1,5 +1,5 @@
 [package]
-name = "finite-automata"
+name = "lexing-luthor"
 version = "0.1.0"
 authors = ["Spencer Gouw <swyverng55@g.ucla.edu>"]
 edition = "2018"

@@ -4,9 +4,12 @@
 mod fa;
 mod symbol;
 mod fa_reader;
+mod fa_drawer;
+
+use std::io::Write;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let fa = fa_reader::from_file("D:\\opus\\rupo\\finite-automata\\test.fa".to_string())?;
+    let fa = fa_reader::from_file("D:\\opus\\rupo\\lexing-luthor\\test.fa".to_string())?;
 
     println!("{}", fa);
 
@@ -14,15 +17,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("{}", dfa);
 
-    // println!("{:?}", fa);
-    // println!("{}", fa.dfa_accepts("ab".to_string()));
+    let dotfile = fa_drawer::draw_fa(dfa)?;
 
-    // for id in 0..fa.num_states() {
-    //     println!("{:?} -- {:?}", id, fa.epsilon_closure(id));
-    // }
-
-    // fa.test();
-
+    let mut file = std::fs::File::create("new.gv")?;
+    file.write_all(dotfile.as_bytes())?;
     Ok(())
-
 }

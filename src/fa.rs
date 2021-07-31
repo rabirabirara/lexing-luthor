@@ -4,12 +4,10 @@ use crate::fa_reader;
 // * Look into using GraphViz to visualize the finite automata, with the 'dot' crate.
 
 use std::collections::HashMap;
-use std::iter::FromIterator;
-
-
+use std::collections::BTreeSet;
 type State = usize;
 // A state set should be hashable, so that it can be used as the key to a HashSet or HashMap in subset construction.  Basically, DFA states must be temporarily represented sets with multiple elements; we want to be able to hash them as easily as with NFA states.
-type StateSet<T> = std::collections::BTreeSet<T>;
+type StateSet<T> = BTreeSet<T>;
 
 // The finite automata holds both the mathematical tuple representation and the graph representation, which is really just a table of beginnings of transitions to full transitions.
 #[derive(Debug, Clone)]
@@ -86,7 +84,6 @@ impl FA {
         self.delta.clone()
     }
     pub fn transitions_of(&self, id: State) -> Option<&Vec<Transition>> {
-        // self.delta.clone().into_iter().filter(|trans| trans.begin == id).collect::<Vec<Transition>>()
         self.graph.get(&id)
     }
     pub fn epsilon_closure(&self, st: State) -> StateSet<State> {
@@ -106,7 +103,6 @@ impl FA {
             }
         }
         closure
-        // Vec::from_iter(closure.into_iter())
     }
     // Compute the epsilon-closure of each state in T; return the union of these closures.
     pub fn epsilon_closure_set(&self, t: StateSet<State>) -> StateSet<State> {
@@ -119,7 +115,6 @@ impl FA {
         }
         
         res
-        // Vec::from_iter(res.into_iter())
     }
     // Compute the union of states that can be moved to through the symbol c, from all the states in T.
     pub fn delta_move(&self, t: &StateSet<State>, c: Symbol) -> Option<StateSet<State>> {
@@ -220,9 +215,11 @@ impl FA {
     // }
 }
 
+// A simple pretty printing of a finite automata.
 impl std::fmt::Display for FA {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         use std::fmt::Write;
+        use std::iter::FromIterator;
         let mut v = Vec::from_iter(self.graph.iter());
         v.sort_by(|a, b| (a.0).partial_cmp(b.0).unwrap());
 
