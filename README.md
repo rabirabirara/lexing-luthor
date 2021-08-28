@@ -2,10 +2,9 @@
 Rust implementations of lexical analysis operations (through finite automata) as outlined in Aho et al. (Dragon Book) and Cooper/Torczon. (Engineering a Compiler)
 
 Currently, capabilities for specifying finite automata simply (through plaintext files of certain syntax) and converting nondeterministic finite automata to deterministic finite 
-automata are implemented.  Upcoming is a simple display for finite automata that adheres to the simple syntax in `parse_fa.rs`, and in the future, a visualization of the automata through
-GraphViz.
+automata are implemented.  You can also produce a .dot file of your finite automata using GraphViz.  (The program can produce the file; you need to have graphviz to parse it.)
 
-Eventually, a true regex-to-NFA module will be added, completing the project as a pedagogic tool to accompany my readings of these two compiler books.
+Eventually, a true regex-to-NFA module will be added, completing the project as a pedagogic tool to accompany my readings of these two compiler books.  But for now, it's unclear to me how one would parse the regex in the first place.
 
 ## Theory
 
