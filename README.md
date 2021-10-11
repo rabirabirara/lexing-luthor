@@ -1,11 +1,15 @@
 # lexing-luthor
 Rust implementations of lexical analysis operations (through finite automata) as outlined in Aho et al. (Dragon Book) and Cooper/Torczon. (Engineering a Compiler)
 
-Currently, capabilities for specifying finite automata simply (through plaintext files of certain syntax) and converting nondeterministic finite automata to deterministic finite 
-automata are implemented.  Upcoming is a simple display for finite automata that adheres to the simple syntax in `parse_fa.rs`, and in the future, a visualization of the automata through
-GraphViz.
+The following capabilities are implemented:
 
-Eventually, a true regex-to-NFA module will be added, completing the project as a pedagogic tool to accompany my readings of these two compiler books.
+- Simple regex parser, using the Shunting-Yard algorithm and a stack/queue.
+- Thompson's construction on the regex, which generates a nondeterministic finite automaton.
+- NFA-DFA conversion through the subset construction.
+- PLANNED: DFA minimization.
+- A syntax for displaying and specifying finite automata.
+
+The program also writes out to a file `new.gv` which you can use graphviz (`dot`) with to write to an `.svg` file for viewing.  It's kind of scuffed right now, I know.
 
 ## Theory
 

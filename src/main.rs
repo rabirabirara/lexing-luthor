@@ -8,10 +8,9 @@ mod fa_drawer;
 mod regex_parser;
 mod thompsons;
 
-// use std::io::Write;
+use std::io::Write;
 use std::ffi::OsString;
 use pico_args::Arguments;
-use phf;
 
 const USAGE: &'static str = "
 Run and stuff.
@@ -57,38 +56,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let post = regex_parser::to_postfix(output);
     println!("{}", post);
 
-    if let Some(exp) = thompsons::parse_string_to_expr(post) {
-        println!("{:?}", exp);
-        let fap = thompsons::parse(exp);
-        println!("{:?}", fap);
-    } else {
-        println!("Error parsing the regex.");
-    }
+    let fa = thompsons::parse_to_finite_automata(post).unwrap();
+    println!("{}", fa);
 
-    
+    let dfa = fa.dfa_from();
+    println!("{}", dfa);
 
-    // // -==-
+    let dotfile = fa_drawer::draw_fa(dfa)?;
 
-    // let file_path = std::path::Path::new(&args.inputs[0]);
-    // let fa = fa_reader::from_file(file_path)?;
-    // // let fa = fa_reader::from_file("D:\\opus\\rupo\\lexing-luthor\\test.fa".to_string())?;
-
-    // println!("{}", fa);
-    // for t in fa.delta() {
-    //     println!("{:?}", t);
-
-    // }
-    
-
-    // let dfa = fa.dfa_from();
-
-    // println!("{}", dfa);
-
-    // let dotfile = fa_drawer::build_dot(dfa)?;
-
-    // fa_drawer::draw_to_file(dotfile, "svg".into(), "autotest.svg".into())?;
-
-    // let mut file = std::fs::File::create("new.gv")?;
-    // file.write_all(dotfile.as_bytes())?;
+    let mut file = std::fs::File::create("new.gv")?;
+    file.write_all(dotfile.as_bytes())?;
     Ok(())
 }

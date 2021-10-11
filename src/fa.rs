@@ -10,6 +10,7 @@ pub type State = usize;
 pub type StateSet<T> = BTreeSet<T>;
 
 // The finite automata holds both the mathematical tuple representation and the graph representation, which is really just a table of beginnings of transitions to full transitions.
+// impl Display: uses FA specification syntax
 #[derive(Debug, Clone)]
 pub struct FA {
     states: Vec<State>,

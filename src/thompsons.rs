@@ -3,6 +3,7 @@
 use crate::fa::{State, StateSet, Transition, FA};
 use crate::symbol::Symbol;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::collections::HashMap;
 // use std::fmt;
 
 // * A special FA with only one start and end state pair.
@@ -213,7 +214,6 @@ pub fn parse(expr: Expr) -> FAPiece {
             or_piece
         }
         Expr::And(e1, e2) => {
-            // TODO: This is incorrect! The pieces are not being mutated because you aren't removing the redundant states.  You've set fa_piece2's new start correctly, but you never added it as a state and removed the old start.
             let fa_piece1 = parse(*e1);
             let mut fa_piece2 = parse(*e2);
 
@@ -288,18 +288,23 @@ pub fn parse(expr: Expr) -> FAPiece {
 fn fap_to_FA(construction: FAPiece) -> FA {
     let mut fa = FA::new();
 
-    // ? Or maybe use the add_state/add_transition API.
-    let states = construction.states().clone().into_iter().collect::<Vec<State>>();
-    let starting = construction.start();
-    let accepting = vec![construction.end()];
-    let delta = construction.delta().clone();
+    for state in construction.states().clone().into_iter() {
+        fa.add_state(state);
+    }
+    fa.set_start(construction.start());
+    fa.add_acceptor(construction.end());
+    for transition in construction.delta() {
+        fa.add_transition(*transition);
+    }
 
-
-    FA::new()
+    fa
 }
 
-pub fn parse_to_FA(input: String) -> FA {
-    FA::new()
+pub fn parse_to_finite_automata(input: String) -> Option<FA> {
+    let expr = parse_string_to_expr(input)?;
+    let fa_piece = parse(expr);
+    let fa = fap_to_FA(fa_piece);
+    Some(fa)
 }
 
 // // if given a function recursively call it until single symbols are reached
