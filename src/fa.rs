@@ -5,9 +5,9 @@ use crate::fa_reader;
 
 use std::collections::HashMap;
 use std::collections::BTreeSet;
-type State = usize;
+pub type State = usize;
 // A state set should be hashable, so that it can be used as the key to a HashSet or HashMap in subset construction.  Basically, DFA states must be temporarily represented sets with multiple elements; we want to be able to hash them as easily as with NFA states.
-type StateSet<T> = BTreeSet<T>;
+pub type StateSet<T> = BTreeSet<T>;
 
 // The finite automata holds both the mathematical tuple representation and the graph representation, which is really just a table of beginnings of transitions to full transitions.
 #[derive(Debug, Clone)]
@@ -45,10 +45,10 @@ impl FA {
     }
     pub fn add_transition(&mut self, t: Transition) {
         self.delta.push(t);
-        if let Some(v) = self.graph.get_mut(&t.begin()) {
+        if let Some(v) = self.graph.get_mut(&t.start()) {
             v.push(t);
         } else {
-            self.graph.insert(t.begin(), vec![t]);
+            self.graph.insert(t.start(), vec![t]);
         }
     }
     pub fn is_accepting(&self, id: State) -> bool {
@@ -60,7 +60,7 @@ impl FA {
 
         for c in string.chars() {
             // locate a transition with begin==cur and sym==c
-            if let Some(tr) = self.delta.iter().find(|&x| x.begin == cur && x.sym == Symbol::Char(c)) {
+            if let Some(tr) = self.delta.iter().find(|&x| x.start == cur && x.sym == Symbol::Char(c)) {
                 // if found, continue to new state and next char
                 cur = tr.end;
             } else {
@@ -71,17 +71,26 @@ impl FA {
         
         return self.accepting.contains(&cur)
     }
-    pub fn states(&self) -> Vec<State> {
-        self.states.clone()
+    pub fn states(&self) -> &Vec<State> {
+        &self.states
+    }
+    pub fn states_mut(&mut self) -> &mut Vec<State> {
+        &mut self.states
     }
     pub fn starting(&self) -> State {
         self.starting
     }
-    pub fn accepting(&self) -> Vec<State> {
-        self.accepting.clone()
+    pub fn accepting(&self) -> &Vec<State> {
+        &self.accepting
     }
-    pub fn delta(&self) -> Vec<Transition> {
-        self.delta.clone()
+    pub fn accepting_mut(&mut self) -> &mut Vec<State> {
+        &mut self.accepting
+    }
+    pub fn delta(&self) -> &Vec<Transition> {
+        &self.delta
+    }
+    pub fn delta_mut(&mut self) -> &mut Vec<Transition> {
+        &mut self.delta
     }
     pub fn transitions_of(&self, id: State) -> Option<&Vec<Transition>> {
         self.graph.get(&id)
@@ -95,7 +104,7 @@ impl FA {
         while let Some(top) = todo.pop() {
             if let Some(transitions) = self.transitions_of(top) {
                 for t in transitions {
-                    if t.sym() == Symbol::Empty && t.begin() == top {
+                    if t.sym() == Symbol::Empty && t.start() == top {
                         closure.insert(t.end());
                         todo.push(t.end());
                     }
@@ -256,26 +265,32 @@ impl std::fmt::Display for FA {
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 pub struct Transition {
     sym: Symbol,
-    begin: State,
+    start: State,
     end: State,
 }
 
 impl Transition {
-    pub fn from(sym: Symbol, begin: State, end: State) -> Self {
+    pub fn from(sym: Symbol, start: State, end: State) -> Self {
         Self {
             sym,
-            begin,
+            start,
             end
         }
     }
     pub fn sym(&self) -> Symbol {
         self.sym
     }
-    pub fn begin(&self) -> State {
-        self.begin
+    pub fn start(&self) -> State {
+        self.start
+    }
+    pub fn set_start(&mut self, s: State) {
+        self.start = s;
     }
     pub fn end(&self) -> State {
         self.end
+    }
+    pub fn set_end(&mut self, s: State) {
+        self.end = s;
     }
 }
 

@@ -12,7 +12,7 @@ pub const STATE_SYMBOL: &'static str = "::";
 pub const ACCEPT_SYMBOL: &'static str = "=>";
 
 
-pub fn from_file(file_path: String) -> Result<FA, Box<dyn std::error::Error>> {
+pub fn from_file(file_path: &std::path::Path) -> Result<FA, Box<dyn std::error::Error>> {
     let file = File::open(file_path)?;
     let file = BufReader::new(file);
     let mut lines = file.lines().filter_map(|x| x.ok());

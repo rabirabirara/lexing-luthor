@@ -9,7 +9,7 @@ pub fn draw_fa(fa: crate::fa::FA) -> Result<String, Box<dyn std::error::Error>> 
     writeln!(output, "digraph {{")?;
     writeln!(output, "rankdir=LR")?;
 
-    let mut accepting = fa.accepting();
+    let mut accepting = fa.accepting().clone();
     accepting.sort();
     let mut acceptors_string = String::new();
     for a in accepting {
@@ -28,7 +28,7 @@ pub fn draw_fa(fa: crate::fa::FA) -> Result<String, Box<dyn std::error::Error>> 
     // }
 
     for t in fa.delta() {
-        writeln!(output, "{} -> {} [label=\"{}\"]", t.begin(), t.end(), {
+        writeln!(output, "{} -> {} [label=\"{}\"]", t.start(), t.end(), {
             match t.sym() {
                 Symbol::Char(c) => c,
                 Symbol::Empty => '\u{03B5}',
