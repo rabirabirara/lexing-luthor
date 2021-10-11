@@ -51,13 +51,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let regex = input;
     let output = regex_parser::add_concatenation(regex);
-    println!("{}", output);
+    // println!("{}", output);
 
     let post = regex_parser::to_postfix(output);
-    println!("{}", post);
+    // println!("{}", post);
 
     let fa = thompsons::parse_to_finite_automata(post).unwrap();
-    println!("{}", fa);
+    // println!("{}", fa);
 
     let dfa = fa.dfa_from();
     println!("{}", dfa);
