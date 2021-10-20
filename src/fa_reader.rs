@@ -1,17 +1,20 @@
 // You can specify a finite automata using this syntax.
 // statenumber
-// symbol -> 
+// symbol ->
 
-use crate::fa::{FA, Transition};
+use crate::fa::FA;
 use crate::symbol::Symbol;
+use crate::transition::Transition;
 
 use std::fs::File;
-use std::io::{BufReader, BufRead};
+use std::io::{BufRead, BufReader};
 
 pub const STATE_SYMBOL: &'static str = "::";
 pub const ACCEPT_SYMBOL: &'static str = "=>";
 
-fn from_iterator(mut lines: impl Iterator<Item = String>) -> Result<FA, Box<dyn std::error::Error>> {
+fn from_iterator(
+    mut lines: impl Iterator<Item = String>,
+) -> Result<FA, Box<dyn std::error::Error>> {
     let mut line_count = 0usize;
     let mut fa = FA::new();
 
@@ -63,7 +66,7 @@ fn from_iterator(mut lines: impl Iterator<Item = String>) -> Result<FA, Box<dyn 
                             }
                             _ => eprintln!("Transition line has extraneous parts; correct the formatting at line {} of the file.", line_count),
                         }
-                    },
+                    }
                     None => {
                         eprintln!("The input file has an incorrect transition count at line {} of the file.", line_count);
                     }
@@ -77,23 +80,22 @@ fn from_iterator(mut lines: impl Iterator<Item = String>) -> Result<FA, Box<dyn 
 pub fn from_stdin() -> Result<FA, Box<dyn std::error::Error>> {
     let stdin = std::io::stdin();
     let lines = stdin.lock().lines().filter_map(|x| x.ok());
-    
+
     from_iterator(lines)
 }
 
 // pub fn from_string(input: &String) -> Result<FA, Box<dyn std::error::Error>> {
 //     let stdin = std::io::stdin();
 //     let lines = stdin.lock().lines().filter_map(|x| x.ok());
-    
+
 //     from_iterator(lines)
 // }
-
 
 pub fn from_file(file_path: &std::path::Path) -> Result<FA, Box<dyn std::error::Error>> {
     let file = File::open(file_path)?;
     let file = BufReader::new(file);
     let lines = file.lines().filter_map(|x| x.ok());
-    
+
     from_iterator(lines)
 }
 

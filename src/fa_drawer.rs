@@ -1,7 +1,7 @@
 // Converts finite automata into dot language files.
 
-use std::fmt::Write;
 use crate::symbol::Symbol;
+use std::fmt::Write;
 
 pub fn draw_fa(fa: crate::fa::FA) -> Result<String, Box<dyn std::error::Error>> {
     let mut output = String::new();
@@ -32,7 +32,7 @@ pub fn draw_fa(fa: crate::fa::FA) -> Result<String, Box<dyn std::error::Error>> 
             match t.sym() {
                 Symbol::Char(c) => c,
                 Symbol::Empty => '\u{03B5}',
-            }   
+            }
         })?;
     }
 

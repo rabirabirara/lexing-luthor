@@ -2,8 +2,10 @@ use crate::symbol::ASCII;
 
 use phf::phf_map;
 
-static OPERATORS: phf::Map<char, usize> = phf_map! {
+pub static OPERATORS: phf::Map<char, usize> = phf_map! {
     '*' => 10,
+    '+' => 10,
+    '?' => 10,
     '.' => 5,
     '|' => 0,
 };
@@ -31,16 +33,16 @@ pub fn add_concatenation(regex: &String) -> String {
         let c = regex[i];
         output.push(c);
 
-        // * Later, add a `if c == '\' to factor in escaped characters.
+        // TODO: Later, add a `if c == '\' to factor in escaped characters.
         if c == '(' || c == '|' {
             continue;
         } else if c == ')' || ASCII.contains(&c) {
             if i + 1 < len {
                 // Look ahead a char; if it is a left parentheses or another character add a concatenation.
-                match regex[i+1] {
-                    ')' | '|' | '*' | '+' | '?' => continue,
+                match regex[i + 1] {
+                    next if next == ')' || OPERATORS.contains_key(&next) => continue,
                     '(' => output.push('.'),
-                    c if ASCII.contains(&c) => output.push('.'),
+                    next if ASCII.contains(&next) => output.push('.'),
                     // ! ASCII also contains ')', '|', and such... make note of this in case errors arise.
                     _ => continue,
                 }
@@ -66,7 +68,7 @@ pub fn to_postfix(regex: &String) -> String {
                     }
                     output.push(op);
                 }
-            },
+            }
             op if OPERATORS.contains_key(&c) => {
                 while let Some(&top) = opstack.last() {
                     if top == '(' {
@@ -82,7 +84,7 @@ pub fn to_postfix(regex: &String) -> String {
                                     opstack.push(op);
                                     break;
                                 }
-                            },
+                            }
                             (_, _) => panic!(),
                         }
                     }
@@ -90,10 +92,10 @@ pub fn to_postfix(regex: &String) -> String {
                 if opstack.is_empty() {
                     opstack.push(op);
                 }
-            },
+            }
             c if ASCII.contains(&c) => {
                 output.push(c);
-            },
+            }
             c => {
                 // output.push(c);
                 // println!("char: {} :", c);
@@ -101,10 +103,12 @@ pub fn to_postfix(regex: &String) -> String {
             }
         }
     }
+
     // Push remaining operations to output, starting from end.
     for &op in opstack.iter().rev() {
         output.push(op);
     }
+    println!("{}", output);
     output
 }
 
@@ -116,17 +120,14 @@ pub fn parse_to_nfa(input: &String) -> Option<FA> {
     let with_concat = add_concatenation(input);
     let postfix = to_postfix(&with_concat);
     thompsons::parse_to_finite_automata(&postfix)
+
 }
 
 pub fn parse_to_dfa(input: &String) -> Option<FA> {
     if let Some(nfa) = parse_to_nfa(input) {
+        println!("{}", nfa);
         Some(nfa.dfa_from())
     } else {
         None
     }
 }
-
-
-// fn produce_
-
-// Given two things, produce thompson's...

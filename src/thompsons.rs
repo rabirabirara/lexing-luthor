@@ -1,10 +1,12 @@
 // thompson's construction
 
-use crate::fa::{State, StateSet, Transition, FA};
-use crate::symbol::Symbol;
+use crate::fa::{State, StateSet, FA};
+use crate::symbol::{Symbol, ASCII};
+use crate::transition::Transition;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use std::collections::HashMap;
 // use std::fmt;
+
+use crate::regex_parser::OPERATORS;
 
 // * A special FA with only one start and end state pair.
 // TODO: ! Change Vec<state> to StateSet<State>.
@@ -64,7 +66,7 @@ impl FAPiece {
     pub fn delta_mut(&mut self) -> &mut Vec<Transition> {
         &mut self.delta
     }
-    pub fn from_sym(sym: Symbol) -> Self {
+    pub fn just_sym(sym: Symbol) -> Self {
         let mut just_piece = FAPiece::new();
 
         let start = Self::produce_id();
@@ -101,6 +103,8 @@ enum Expr {
     Or(Box<Expr>, Box<Expr>),
     And(Box<Expr>, Box<Expr>),
     Star(Box<Expr>),
+    Plus(Box<Expr>),
+    QMark(Box<Expr>),
 }
 
 // impl fmt::Display for Expr {
@@ -122,29 +126,87 @@ enum Expr {
 // Recursively build an expression from the postfix regex string.
 // Strings must have no whitespace?  Or can have whitespace as a symbol...
 // TODO: Don't forget, early on, to weed out incorrect regular expressions.  Don't just rely on the vexing "parse error" you have right now.
-fn parse_string_to_expr(s: &String) -> Option<Expr> {
-    let mut symstack = Vec::new();
-    let mut opstack = Vec::new();
+// fn parse_string_to_expr(s: &String) -> Option<Expr> {
+//     let mut symstack = Vec::new();
+//     let mut opstack = Vec::new();
 
+//     for c in s.chars() {
+//         match c {
+//             c if OPERATORS.contains_key(&c) => opstack.push(c),
+//             c => symstack.push(c),
+//         }
+//     }
+//     println!("{:#?}", symstack);
+//     println!("{:#?}", opstack);
+
+//     let mut expstack = Vec::new();
+//     symstack
+//         .into_iter()
+//         .rev()
+//         .for_each(|sym| expstack.push(Expr::Just(Symbol::Char(sym))));
+
+//     println!("{:#?}", expstack);
+//     println!("{:#?}", opstack);
+
+//     for op in opstack {
+//         match op {
+//             '.' => {
+//                 let sym1 = expstack.pop()?;
+//                 let sym2 = expstack.pop()?;
+//                 println!("{:?} {:?}", sym1, sym2);
+//                 expstack.push(Expr::And(Box::new(sym1), Box::new(sym2)));
+//             }
+//             '|' => {
+//                 let sym1 = expstack.pop()?;
+//                 let sym2 = expstack.pop()?;
+//                 println!("{:?} {:?}", sym1, sym2);
+
+//                 expstack.push(Expr::Or(Box::new(sym1), Box::new(sym2)));
+//             }
+//             '*' => {
+//                 if let Some(sym) = expstack.pop() {
+//                     expstack.push(Expr::Star(Box::new(sym)));
+//                 } else {
+//                     eprintln!("Missing an expr from the stack.  Again, this is the Star branch of the match.");
+//                 }
+//             }
+//             '+' => {
+//                 if let Some(sym) = expstack.pop() {
+//                     expstack.push(Expr::Plus(Box::new(sym)));
+//                 } else {
+//                     eprintln!("Missing an expr from the stack.  Again, this is the Plus branch of the match.");
+//                 }
+//             }
+//             '?' => {
+//                 if let Some(sym) = expstack.pop() {
+//                     expstack.push(Expr::QMark(Box::new(sym)));
+//                 } else {
+//                     eprintln!("Missing an expr from the stack.  Again, this is the QMark branch of the match.");
+//                 }
+//             }
+//             _ => unreachable!("Illegal operator; only the above three are ever added to opstack."),
+//         }
+//     }
+//     // opstack is exhausted, and so should expstack by now.
+//     // in fact, the last expr on expstack is the expression we want.
+//     // if not, then expr parse error.
+//     if expstack.len() != 1 {
+//         None
+//     } else {
+//         let e = expstack.pop().unwrap();
+//         println!("{:#?}", e);
+//         return Some(e);
+//     }
+// }
+
+fn parse_string_to_expr(s: &String) -> Option<Expr> {
+    let mut expstack: Vec<Expr> = Vec::new();
     for c in s.chars() {
         match c {
-            '.' | '|' | '*' => opstack.push(c),
-            c => symstack.push(c),
-        }
-    }
-
-    let symstack = symstack.into_iter().rev().collect::<Vec<char>>();
-    let mut expstack = Vec::new();
-    symstack
-        .into_iter()
-        .for_each(|sym| expstack.push(Expr::Just(Symbol::Char(sym))));
-
-    //
-    for op in opstack {
-        match op {
             '.' => {
-                let sym1 = expstack.pop()?;
+                // ! The expression popped second comes first in the chronological order.
                 let sym2 = expstack.pop()?;
+                let sym1 = expstack.pop()?;
                 expstack.push(Expr::And(Box::new(sym1), Box::new(sym2)));
             }
             '|' => {
@@ -159,12 +221,28 @@ fn parse_string_to_expr(s: &String) -> Option<Expr> {
                     eprintln!("Missing an expr from the stack.  Again, this is the Star branch of the match.");
                 }
             }
+            '+' => {
+                if let Some(sym) = expstack.pop() {
+                    expstack.push(Expr::Plus(Box::new(sym)));
+                } else {
+                    eprintln!("Missing an expr from the stack.  Again, this is the Plus branch of the match.");
+                }
+            }
+            '?' => {
+                if let Some(sym) = expstack.pop() {
+                    expstack.push(Expr::QMark(Box::new(sym)));
+                } else {
+                    eprintln!("Missing an expr from the stack.  Again, this is the QMark branch of the match.");
+                }
+            }
+            c if ASCII.contains(&c) => {
+                expstack.push(Expr::Just(Symbol::Char(c)));
+            }
             _ => unreachable!("Illegal operator; only the above three are ever added to opstack."),
         }
     }
-    // opstack is exhausted, and so should expstack by now.
-    // in fact, the last expr on expstack is the expression we want.
-    // if not, then expr parse error.
+    // The last expr on expstack is the expression we want.
+    // If not, then expr parse error.
     if expstack.len() != 1 {
         None
     } else {
@@ -178,8 +256,8 @@ fn parse_string_to_expr(s: &String) -> Option<Expr> {
 fn parse(expr: Expr) -> FAPiece {
     // * Each step must change the names of all the states.  How to generate unique names?  Need a global counter, or to build everything in an arena.  Maybe atomic::AtomicUsize?
     match expr {
-        Expr::Empty => FAPiece::from_sym(Symbol::Empty),
-        Expr::Just(sym) => FAPiece::from_sym(sym),
+        Expr::Empty => FAPiece::just_sym(Symbol::Empty),
+        Expr::Just(sym) => FAPiece::just_sym(sym),
         Expr::Or(e1, e2) => {
             let fa_piece1 = parse(*e1);
             let fa_piece2 = parse(*e2);
@@ -282,10 +360,66 @@ fn parse(expr: Expr) -> FAPiece {
 
             star_piece
         }
+        Expr::Plus(e) => {
+            let fa_piece = parse(*e);
+
+            let start = FAPiece::produce_id();
+            let end = FAPiece::produce_id();
+
+            let mut plus_piece = FAPiece::new_with_start_end(start, end);
+
+            fa_piece
+                .states()
+                .iter()
+                .for_each(|&state| plus_piece.add_state(state));
+            fa_piece
+                .delta()
+                .iter()
+                .for_each(|&trans| plus_piece.add_transition(trans));
+
+            plus_piece.add_transition(Transition::from(Symbol::Empty, start, fa_piece.start()));
+            plus_piece.add_transition(Transition::from(Symbol::Empty, fa_piece.end(), end));
+            // plus_piece.add_transition(Transition::from(Symbol::Empty, start, end));
+            plus_piece.add_transition(Transition::from(
+                Symbol::Empty,
+                fa_piece.end(),
+                fa_piece.start(),
+            ));
+
+            plus_piece
+        }
+        Expr::QMark(e) => {
+            let fa_piece = parse(*e);
+
+            let start = FAPiece::produce_id();
+            let end = FAPiece::produce_id();
+
+            let mut qmark_piece = FAPiece::new_with_start_end(start, end);
+
+            fa_piece
+                .states()
+                .iter()
+                .for_each(|&state| qmark_piece.add_state(state));
+            fa_piece
+                .delta()
+                .iter()
+                .for_each(|&trans| qmark_piece.add_transition(trans));
+
+            qmark_piece.add_transition(Transition::from(Symbol::Empty, start, fa_piece.start()));
+            qmark_piece.add_transition(Transition::from(Symbol::Empty, fa_piece.end(), end));
+            qmark_piece.add_transition(Transition::from(Symbol::Empty, start, end));
+            // qmark_piece.add_transition(Transition::from(
+            //     Symbol::Empty,
+            //     fa_piece.end(),
+            //     fa_piece.start(),
+            // ));
+
+            qmark_piece
+        }
     }
 }
 
-fn fap_to_FA(construction: FAPiece) -> FA {
+fn fapiece_to_fa(construction: FAPiece) -> FA {
     let mut fa = FA::new();
 
     for state in construction.states().clone().into_iter() {
@@ -303,12 +437,6 @@ fn fap_to_FA(construction: FAPiece) -> FA {
 pub fn parse_to_finite_automata(input: &String) -> Option<FA> {
     let expr = parse_string_to_expr(input)?;
     let fa_piece = parse(expr);
-    let fa = fap_to_FA(fa_piece);
+    let fa = fapiece_to_fa(fa_piece);
     Some(fa)
 }
-
-// // if given a function recursively call it until single symbols are reached
-// fn parse_or() -> fa::FA {
-//     let mut out = FA::new();
-
-// }

@@ -1,4 +1,4 @@
-#[allow(dead_code)]
+#![allow(dead_code)]
 // mod state_set;
 mod fa;
 mod fa_drawer;
@@ -6,11 +6,18 @@ mod fa_reader;
 mod regex_parser;
 mod symbol;
 mod thompsons;
+mod transition;
 
 use clap::{App, Arg};
 use std::path::Path;
 
 // TODO: Allow drawing option, implement DFA search functionality, make it an option, output file for FA spec, input an FA spec to receive a matcher and let stdin input be matched.
+// TODO: Allow DFA simplification in DFA minimization, where multiple transitions with same begin and end states (but different symbols) are combined into one transition with a list of states, made for easy searching.  Vecs are hash after all and can be put in BTreeSets no problem.  Or maybe use an enum, which is either single symbol or Vec<Symbol>?
+//  * Possibly, rewrite Transition tto use Vec?
+// TODO: Implement support of Kleene Plus and question mark operators.  X+ = X X* ; X? = X | \varepsilon 
+//  * Though granted, the Kleene plus is just Kleene star (in Thompson's) without the epsilon transition between start and end.  I'm sure the DFA factors all that out anyway.
+//  * And the question mark is just Kleene star without the looping backwards epsilon transition from the end of the inner piece to its start.  This is of course simpler than converting X? into (X|eps).
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let matches = App::new("regex-visualizer")
         .author("Spencer G. <swyverng55@g.ucla.edu>")
