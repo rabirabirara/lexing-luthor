@@ -18,7 +18,7 @@ static OPERATORS: phf::Map<char, usize> = phf_map! {
 // Verify that the string is all ASCII, then verify that the string is a valid regex (might be done in the parsing stage).
 
 // First, a function that converts a simple regex to a simple regex with concatenation operator '.'
-pub fn add_concatenation(regex: String) -> String {
+pub fn add_concatenation(regex: &String) -> String {
     let mut output = String::new();
     let len = regex.len();
     let regex = regex
@@ -50,7 +50,7 @@ pub fn add_concatenation(regex: String) -> String {
     output
 }
 
-pub fn to_postfix(regex: String) -> String {
+pub fn to_postfix(regex: &String) -> String {
     let mut output = String::new();
     let mut opstack: Vec<char> = Vec::new();
 
@@ -109,14 +109,21 @@ pub fn to_postfix(regex: String) -> String {
 }
 
 use crate::fa::FA;
+use crate::thompsons;
 
 // Now, turn the postfix notation into something wrapped with functions OR, AND, and STAR (repeat).
-fn parse_to_nfa(input: String) -> FA {
+pub fn parse_to_nfa(input: &String) -> Option<FA> {
+    let with_concat = add_concatenation(input);
+    let postfix = to_postfix(&with_concat);
+    thompsons::parse_to_finite_automata(&postfix)
+}
 
-
-
-
-    unimplemented!()
+pub fn parse_to_dfa(input: &String) -> Option<FA> {
+    if let Some(nfa) = parse_to_nfa(input) {
+        Some(nfa.dfa_from())
+    } else {
+        None
+    }
 }
 
 

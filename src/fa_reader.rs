@@ -11,13 +11,8 @@ use std::io::{BufReader, BufRead};
 pub const STATE_SYMBOL: &'static str = "::";
 pub const ACCEPT_SYMBOL: &'static str = "=>";
 
-
-pub fn from_file(file_path: &std::path::Path) -> Result<FA, Box<dyn std::error::Error>> {
-    let file = File::open(file_path)?;
-    let file = BufReader::new(file);
-    let mut lines = file.lines().filter_map(|x| x.ok());
+fn from_iterator(mut lines: impl Iterator<Item = String>) -> Result<FA, Box<dyn std::error::Error>> {
     let mut line_count = 0usize;
-
     let mut fa = FA::new();
 
     while let Some(line) = lines.next() {
@@ -77,6 +72,29 @@ pub fn from_file(file_path: &std::path::Path) -> Result<FA, Box<dyn std::error::
         }
     }
     Ok(fa)
+}
+
+pub fn from_stdin() -> Result<FA, Box<dyn std::error::Error>> {
+    let stdin = std::io::stdin();
+    let lines = stdin.lock().lines().filter_map(|x| x.ok());
+    
+    from_iterator(lines)
+}
+
+// pub fn from_string(input: &String) -> Result<FA, Box<dyn std::error::Error>> {
+//     let stdin = std::io::stdin();
+//     let lines = stdin.lock().lines().filter_map(|x| x.ok());
+    
+//     from_iterator(lines)
+// }
+
+
+pub fn from_file(file_path: &std::path::Path) -> Result<FA, Box<dyn std::error::Error>> {
+    let file = File::open(file_path)?;
+    let file = BufReader::new(file);
+    let lines = file.lines().filter_map(|x| x.ok());
+    
+    from_iterator(lines)
 }
 
 // * The impl Display for FA is in fa.rs.

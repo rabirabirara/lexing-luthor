@@ -215,6 +215,24 @@ impl FA {
 
         fa
     }
+    pub fn minimize(&mut self) {
+        // Hopcroft's algorithm partitions the states of the DFA so that all states
+        // which have the same response to input are in the same partition.
+
+        // let split = |&s| {
+        //     for c in crate::symbol::ASCII {
+        //         if c 
+        //     }
+        // }
+
+        // // vec of statesets
+        // let T = Vec::new();
+        // let P = Vec::new();
+
+        // while P != T {
+
+        // }
+    }
     // pub fn test(&self) {
     //     let dfa = self.subset_construction();
     //     for (stateset, transits) in dfa {

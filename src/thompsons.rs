@@ -9,7 +9,7 @@ use std::collections::HashMap;
 // * A special FA with only one start and end state pair.
 // TODO: ! Change Vec<state> to StateSet<State>.
 #[derive(Debug, Clone)]
-pub struct FAPiece {
+struct FAPiece {
     states: StateSet<State>,
     start: State,
     end: State,
@@ -95,7 +95,7 @@ impl FAPiece {
 // Define expression.
 // Btw, this definition seems robust enough.  See https://rust-unofficial.github.io/patterns/patterns/behavioural/visitor.html; they do pretty much the same thing.
 #[derive(Debug, Clone)]
-pub enum Expr {
+enum Expr {
     Empty,
     Just(Symbol),
     Or(Box<Expr>, Box<Expr>),
@@ -122,7 +122,7 @@ pub enum Expr {
 // Recursively build an expression from the postfix regex string.
 // Strings must have no whitespace?  Or can have whitespace as a symbol...
 // TODO: Don't forget, early on, to weed out incorrect regular expressions.  Don't just rely on the vexing "parse error" you have right now.
-pub fn parse_string_to_expr(s: String) -> Option<Expr> {
+fn parse_string_to_expr(s: &String) -> Option<Expr> {
     let mut symstack = Vec::new();
     let mut opstack = Vec::new();
 
@@ -175,7 +175,7 @@ pub fn parse_string_to_expr(s: String) -> Option<Expr> {
 // Parse an Expression into a recursive set of FAPieces.
 // ! Super inefficient... it just reads redundant transitions over and over again.  STOP CREATING NEW FAPIECES!  JUST USE THE OLD ONES!
 // DETERMINE A WAY TO CONSTANT TIME APPEND STATES AND TRANSITIONS, INSTEAD OF ITERATING
-pub fn parse(expr: Expr) -> FAPiece {
+fn parse(expr: Expr) -> FAPiece {
     // * Each step must change the names of all the states.  How to generate unique names?  Need a global counter, or to build everything in an arena.  Maybe atomic::AtomicUsize?
     match expr {
         Expr::Empty => FAPiece::from_sym(Symbol::Empty),
@@ -300,7 +300,7 @@ fn fap_to_FA(construction: FAPiece) -> FA {
     fa
 }
 
-pub fn parse_to_finite_automata(input: String) -> Option<FA> {
+pub fn parse_to_finite_automata(input: &String) -> Option<FA> {
     let expr = parse_string_to_expr(input)?;
     let fa_piece = parse(expr);
     let fa = fap_to_FA(fa_piece);

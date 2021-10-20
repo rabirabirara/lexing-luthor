@@ -1,70 +1,76 @@
 #[allow(dead_code)]
-
 // mod state_set;
 mod fa;
-mod symbol;
-mod fa_reader;
 mod fa_drawer;
+mod fa_reader;
 mod regex_parser;
+mod symbol;
 mod thompsons;
 
-use std::io::Write;
-use std::ffi::OsString;
-use pico_args::Arguments;
+use clap::{App, Arg};
+use std::path::Path;
 
-const USAGE: &'static str = "
-Run and stuff.
-";
-
-
-struct Args {
-    help: bool,
-    inputs: Vec<OsString>,
-}
-
-fn parse_args(mut args: Arguments) -> Result<Args, Box<dyn std::error::Error>> {
-    Ok(
-        Args {
-            help: args.contains(["-h", "--help"]),
-            inputs: args.finish(),
-        }
-    )
-}
-
+// TODO: Allow drawing option, implement DFA search functionality, make it an option, output file for FA spec, input an FA spec to receive a matcher and let stdin input be matched.
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let matches = App::new("regex-visualizer")
+        .author("Spencer G. <swyverng55@g.ucla.edu>")
+        .about("Parses and displays regex or an NFA specification into a DFA.")
+        .arg(
+            Arg::with_name("input-file")
+                .short("i")
+                .long("input")
+                .value_name("FILE")
+                .help("Specify a regex/NFA by file.")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("specify")
+                .short("s")
+                .long("specify")
+                .help("Set this to read an NFA specification instead of a regex."),
+        )
+        .get_matches();
 
-    // let args = parse_args(Arguments::from_env())?;
+    if matches.is_present("specify") {
+        if let Some(file) = matches.value_of("input-file") {
+            let file_path = Path::new(&file);
+            let fa = fa_reader::from_file(file_path)?;
 
-    // if args.help {
-    //     println!("{}", USAGE);
-    //     return Ok(());
-    // }
+            println!("{}", fa);
+        } else {
+            // let mut input = String::new();
+            // std::io::stdin().read_line(&mut input)?;
+            // let input = input.trim().to_string();
 
-    // if args.inputs.len() != 1 {
-    //     eprintln!("Please input exactly one argument for the input file.");
-    //     return Ok(());
-    // }
+            let fa = fa_reader::from_stdin()?;
+            println!("{}", fa);
+        }
+    } else {
+        // regex
+        if let Some(file) = matches.value_of("input-file") {
+            let file_path = Path::new(&file);
+            let input = std::fs::read_to_string(file_path)?;
+            if let Some(fa) = regex_parser::parse_to_dfa(&input) {
+                println!("{}", fa);
+            } else {
+                println!("failed to parse:\n{}", input);
+            }
+        } else {
+            let mut input = String::new();
+            std::io::stdin().read_line(&mut input)?;
+            let input = input.trim().to_string();
 
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input)?;
-    let input = input.trim().to_string();
+            if let Some(fa) = regex_parser::parse_to_dfa(&input) {
+                println!("{}", fa);
+            } else {
+                println!("failed to parse:\n{}", input);
+            }
+        }
+    }
 
-    let regex = input;
-    let output = regex_parser::add_concatenation(regex);
-    // println!("{}", output);
+    // let dotfile = fa_drawer::draw_fa(dfa)?;
 
-    let post = regex_parser::to_postfix(output);
-    // println!("{}", post);
-
-    let fa = thompsons::parse_to_finite_automata(post).unwrap();
-    // println!("{}", fa);
-
-    let dfa = fa.dfa_from();
-    println!("{}", dfa);
-
-    let dotfile = fa_drawer::draw_fa(dfa)?;
-
-    let mut file = std::fs::File::create("new.gv")?;
-    file.write_all(dotfile.as_bytes())?;
+    // let mut file = std::fs::File::create("new.gv")?;
+    // file.write_all(dotfile.as_bytes())?;
     Ok(())
 }
