@@ -11,6 +11,21 @@ The following capabilities are implemented:
 
 The program also writes out to a file `new.gv` which you can use graphviz (`dot`) with to write to an `.svg` file for viewing.  (It's messy right now.)
 
+## Usage
+
+You must have `cargo` installed on your computer.  Simply run `cargo run` in the command line.
+
+You will be prompted to enter a regular expression.  At present, you can only enter regular expressions as originally defined with the 3 main operators '.', '|', and '*' (plus the 2 extended ones: '?' and '+').  You can only use ASCII characters outside of those operators, and you cannot escape these operators yet.
+
+Once you have entered the regular expression, a representation of the resulting DFA will be displayed; you can then enter a string to see if it matches with the regex.
+
+#### Using graphviz
+
+If you have the `dot` renderer of `graphviz` files, you can specify the `-g` or `--graphviz` option like so: `cargo run -- -g <OUTPUT-FILE>`.  The output file argument
+is the file path to which `lexing-luthor` will write a `.gv` representation of your finite automaton.
+
+To render it, use `dot` like so: `dot -Tsvg <OUTPUT-FILE'S NAME>.gv -o <OUTPUT-IMAGE>`.  You can of course replace `svg` with other filetypes that are supported by `dot`.  Open the resulting image to view your finite automaton.
+
 ## Theory
 
 Finite-automata are similar to state machines.  They are represented like directed graphs, except edges have a special "weight" - a symbol is attached to each edge.
