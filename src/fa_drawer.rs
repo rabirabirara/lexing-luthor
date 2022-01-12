@@ -28,7 +28,7 @@ pub fn draw_fa(fa: crate::fa::FA) -> Result<String, Box<dyn std::error::Error>> 
     // }
 
     for t in fa.delta() {
-        writeln!(output, "{} -> {} [label=\"{}\"]", t.start(), t.end(), {
+        writeln!(output, "{} -> {} [label=\"'{}'\"]", t.start(), t.end(), {
             match t.sym() {
                 Symbol::Char(c) => c,
                 Symbol::Empty => '\u{03B5}',
