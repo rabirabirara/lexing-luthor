@@ -56,18 +56,18 @@ impl FA {
         self.accepting.contains(&id)
     }
     // Does not work on NFAs.  DFAs only.
+    // TODO: FIX THIS - (tt|y*) breaks with ty
     pub fn dfa_accepts(&self, string: String) -> bool {
         let mut cur = self.starting;
 
         for c in string.chars() {
             // locate a transition with begin==cur and sym==c
-            if let Some(tr) = self
-                .delta
-                .iter()
-                .find(|&x| x.start() == cur && x.sym() == Symbol::Char(c))
-            {
-                // if found, continue to new state and next char
-                cur = tr.end();
+            if let Some(tr) = self.transitions_of(cur) {
+                for t in tr {
+                    if t.sym() == Symbol::Char(c) {
+                        cur = t.end();
+                    }
+                }
             } else {
                 // if no such transition, return false (don't follow epsilon closure)
                 return false;

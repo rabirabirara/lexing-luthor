@@ -10,8 +10,6 @@ pub static OPERATORS: phf::Map<char, usize> = phf_map! {
     '|' => 0,
 };
 
-// More efficient implementations might use PHF - perfect hash function libraries.
-
 // Shunting-yard, and concatenation in regex.
 
 // We want to export this as an object.  Or maybe not.  Yeah, no need.

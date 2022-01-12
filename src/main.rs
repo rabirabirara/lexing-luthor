@@ -10,6 +10,8 @@ mod transition;
 
 use clap::{App, Arg};
 use std::path::Path;
+use std::fs::File;
+use std::io::prelude::*;
 
 // TODO: Allow drawing option, implement DFA search functionality, make it an option, output file for FA spec, input an FA spec to receive a matcher and let stdin input be matched.
 // TODO: Allow DFA simplification in DFA minimization, where multiple transitions with same begin and end states (but different symbols) are combined into one transition with a list of states, made for easy searching.  Vecs are hash after all and can be put in BTreeSets no problem.  Or maybe use an enum, which is either single symbol or Vec<Symbol>?
@@ -55,6 +57,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         // regex
         if let Some(file) = matches.value_of("input-file") {
+            // user enters file with regex
             let file_path = Path::new(&file);
             let input = std::fs::read_to_string(file_path)?;
             if let Some(fa) = regex_parser::parse_to_dfa(&input) {
@@ -63,21 +66,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("failed to parse:\n{}", input);
             }
         } else {
+            // user enters regex manually
+            println!("Enter the regex you want to visualize.");
             let mut input = String::new();
             std::io::stdin().read_line(&mut input)?;
             let input = input.trim().to_string();
 
             if let Some(fa) = regex_parser::parse_to_dfa(&input) {
                 println!("{}", fa);
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input)?;
+                let input = input.trim().to_string();
+                println!("{}", fa.dfa_accepts(input));
+                let dotfile = fa_drawer::draw_fa(fa)?;
+                let mut file = File::create("new.gv")?;
+                file.write_all(dotfile.as_bytes())?;
             } else {
                 println!("failed to parse:\n{}", input);
             }
         }
     }
 
-    // let dotfile = fa_drawer::draw_fa(dfa)?;
-
-    // let mut file = std::fs::File::create("new.gv")?;
-    // file.write_all(dotfile.as_bytes())?;
     Ok(())
 }

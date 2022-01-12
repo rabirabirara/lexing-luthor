@@ -107,98 +107,6 @@ enum Expr {
     QMark(Box<Expr>),
 }
 
-// impl fmt::Display for Expr {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
-//         match self {
-//             &Expr::Just(sym) => {
-//                 match sym {
-//                     Symbol::Char(c) => writeln!(f, "{}", c),
-//                     Symbol::Empty => writeln!(f, "ε"),
-//                 }
-//             },
-//             &Expr::Or(sym1, sym2) => {
-//                 writeln!(f, "{}")
-//             }
-//         }
-//     }
-// }
-
-// Recursively build an expression from the postfix regex string.
-// Strings must have no whitespace?  Or can have whitespace as a symbol...
-// TODO: Don't forget, early on, to weed out incorrect regular expressions.  Don't just rely on the vexing "parse error" you have right now.
-// fn parse_string_to_expr(s: &String) -> Option<Expr> {
-//     let mut symstack = Vec::new();
-//     let mut opstack = Vec::new();
-
-//     for c in s.chars() {
-//         match c {
-//             c if OPERATORS.contains_key(&c) => opstack.push(c),
-//             c => symstack.push(c),
-//         }
-//     }
-//     println!("{:#?}", symstack);
-//     println!("{:#?}", opstack);
-
-//     let mut expstack = Vec::new();
-//     symstack
-//         .into_iter()
-//         .rev()
-//         .for_each(|sym| expstack.push(Expr::Just(Symbol::Char(sym))));
-
-//     println!("{:#?}", expstack);
-//     println!("{:#?}", opstack);
-
-//     for op in opstack {
-//         match op {
-//             '.' => {
-//                 let sym1 = expstack.pop()?;
-//                 let sym2 = expstack.pop()?;
-//                 println!("{:?} {:?}", sym1, sym2);
-//                 expstack.push(Expr::And(Box::new(sym1), Box::new(sym2)));
-//             }
-//             '|' => {
-//                 let sym1 = expstack.pop()?;
-//                 let sym2 = expstack.pop()?;
-//                 println!("{:?} {:?}", sym1, sym2);
-
-//                 expstack.push(Expr::Or(Box::new(sym1), Box::new(sym2)));
-//             }
-//             '*' => {
-//                 if let Some(sym) = expstack.pop() {
-//                     expstack.push(Expr::Star(Box::new(sym)));
-//                 } else {
-//                     eprintln!("Missing an expr from the stack.  Again, this is the Star branch of the match.");
-//                 }
-//             }
-//             '+' => {
-//                 if let Some(sym) = expstack.pop() {
-//                     expstack.push(Expr::Plus(Box::new(sym)));
-//                 } else {
-//                     eprintln!("Missing an expr from the stack.  Again, this is the Plus branch of the match.");
-//                 }
-//             }
-//             '?' => {
-//                 if let Some(sym) = expstack.pop() {
-//                     expstack.push(Expr::QMark(Box::new(sym)));
-//                 } else {
-//                     eprintln!("Missing an expr from the stack.  Again, this is the QMark branch of the match.");
-//                 }
-//             }
-//             _ => unreachable!("Illegal operator; only the above three are ever added to opstack."),
-//         }
-//     }
-//     // opstack is exhausted, and so should expstack by now.
-//     // in fact, the last expr on expstack is the expression we want.
-//     // if not, then expr parse error.
-//     if expstack.len() != 1 {
-//         None
-//     } else {
-//         let e = expstack.pop().unwrap();
-//         println!("{:#?}", e);
-//         return Some(e);
-//     }
-// }
-
 fn parse_string_to_expr(s: &String) -> Option<Expr> {
     let mut expstack: Vec<Expr> = Vec::new();
     for c in s.chars() {
@@ -238,7 +146,7 @@ fn parse_string_to_expr(s: &String) -> Option<Expr> {
             c if ASCII.contains(&c) => {
                 expstack.push(Expr::Just(Symbol::Char(c)));
             }
-            _ => unreachable!("Illegal operator; only the above three are ever added to opstack."),
+            _ => unreachable!("Illegal character"),
         }
     }
     // The last expr on expstack is the expression we want.
@@ -254,7 +162,8 @@ fn parse_string_to_expr(s: &String) -> Option<Expr> {
 // ! Super inefficient... it just reads redundant transitions over and over again.  STOP CREATING NEW FAPIECES!  JUST USE THE OLD ONES!
 // DETERMINE A WAY TO CONSTANT TIME APPEND STATES AND TRANSITIONS, INSTEAD OF ITERATING
 fn parse(expr: Expr) -> FAPiece {
-    // * Each step must change the names of all the states.  How to generate unique names?  Need a global counter, or to build everything in an arena.  Maybe atomic::AtomicUsize?
+    // Match on an expression, turning it into a single finite automata.
+    // This is done by recursing through the expression and building the piece bit by bit.
     match expr {
         Expr::Empty => FAPiece::just_sym(Symbol::Empty),
         Expr::Just(sym) => FAPiece::just_sym(sym),
@@ -305,6 +214,7 @@ fn parse(expr: Expr) -> FAPiece {
             fa_piece2.add_state(fa_piece1.end());
             fa_piece2.set_start(fa_piece1.end());
 
+            // Change all the transitions so that they use the new starting state.
             fa_piece2.delta_mut().iter_mut().for_each(|trans| {
                 if trans.start() == oldstart {
                     trans.set_start(newstart);
