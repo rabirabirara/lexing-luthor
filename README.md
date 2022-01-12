@@ -9,7 +9,7 @@ The following capabilities are implemented:
 - PLANNED: DFA minimization.
 - A syntax for displaying and specifying finite automata.
 
-The program also writes out to a file `new.gv` which you can use graphviz (`dot`) with to write to an `.svg` file for viewing.  It's kind of scuffed right now, I know.
+The program also writes out to a file `new.gv` which you can use graphviz (`dot`) with to write to an `.svg` file for viewing.  (It's messy right now.)
 
 ## Theory
 
